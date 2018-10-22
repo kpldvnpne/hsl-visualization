@@ -62,7 +62,7 @@
         text-shadow: none;
       }
 
-      #hueValue {
+      .value {
         border-radius: 5px;
         margin: 20px;
         border: 2px solid #5f9ea0;
@@ -72,38 +72,50 @@
         text-align: center;
       }
 
-      #hueValue:hover, #hueValue:active {
+      .value:hover, .value:active {
         border: 2px solid #6495ed;
       }
 
-      #saturationContainer {
-        border: 1px dotted black;
-      }
-
-      #saturationInput {
+      .verticalInput {
         position: relative;
         margin: 0 20px;
-        width: 30px;
+        width: 30;
         height: 200px;
-        background-color: red;
+        background: linear-gradient(to bottom, hsl(0, 100%, 50%), hsl(0, 0%, 50%));
+      }
+
+      #double-pointer {
+        position: absolute;
+        top: 0px;
+        left: -20px;
+        width: 70px;
+        text-align: center;
+        text-shadow: 0 0 5px black;
+        transform: translateY(-50%);
+        color: hsl(0, 100%, 50%);
+
+        user-select: none;
+      }
+
+      #double-pointer:active {
+        text-shadow: none;
       }
 
       #left-pointer, #right-pointer {
-        position: absolute;
-        top: 100px;
+        display: inline-block;
         font-size: 30px;
+
         line-height: 30px;
-
-        color: hsl(0, 100%, 50%);
-        text-shadow: 0 0 5px black;
-      }
-
-      #left-pointer {
-        transform: translate(-50%, -50%);
+        cursor: pointer;
       }
 
       #right-pointer {
-        transform: translate(50%, -50%) rotate(180deg);
+        margin-left: 10px;
+        transform:  rotate(180deg);
+      }
+
+      #lightnessContainer>#double-pointer {
+        top: 100px;
       }
 
     </style>
@@ -115,25 +127,80 @@
         <div id="pointer">➤</div>
       </div>
 
-      <input id="hueValue" value="0" type="text"/>
+      <input id="hueValue" class="value" value="0" onchange="setHue(this.value)" type="text"/>
     </div>
 
     <div id="saturationContainer" class="container">
-      <div id="saturationInput">
-        <div id="left-pointer">➤</div>
-        <div id="right-pointer">➤</div>
+      <div id="saturationInput" class="verticalInput">
+        <div id="double-pointer">
+          <div id="left-pointer">➤</div><div id="right-pointer">➤</div>
+        </div>
       </div>
+
+        <input id="saturationValue" class="value" value="0" type="text"/>
+    </div>
+
+    <div id="lightnessContainer" class="container">
+      <div id="lightnessInput" class="verticalInput">
+        <div id="double-pointer">
+          <div id="left-pointer">➤</div><div id="right-pointer">➤</div>
+        </div>
+      </div>
+
+        <input id="lightnessValue" class="value" value="0" type="text"/>
     </div>
 
     <script>
       "use strict";
 
+      function toHSL(hue, saturation, lightness) {
+        return "hsl(" + hue + "," + saturation + "%," + lightness + "%)";
+      }
+
+      let hue = 0;
+      let saturation = 100;
+      let lightness = 50;
 
       let pointer = document.querySelector("#pointer");
       let radius = pointer.parentElement.offsetWidth / 2;
 
       let hueInput = document.querySelector("#hueInput");
       let hueValue = document.querySelector("#hueValue");
+
+      let doublePointer = document.querySelector('#double-pointer');
+      let saturationInput = document.querySelector("#saturationInput");
+
+      function setHue(value) {
+        value = Number(value);
+        hue = value;
+
+        // for div#hueInput
+        let theta = value * Math.PI / 180;
+
+        let posX = Math.sin(theta) * radius - 10;
+        let posY = Math.cos(theta) * radius + 10;
+        posY = -posY;
+        posX += radius;
+        posY += radius;
+
+        hueValue.value = value.toFixed(2);
+
+        pointer.style.color = toHSL(value, 100, 50);
+        pointer.style.left = posX + "px";
+        pointer.style.top = posY + "px";
+        pointer.style.transform = "translate(-50%, -50%) rotate(" + (theta + Math.PI / 2)  + "rad)"; 
+
+
+        // for div#saturationInput
+        let startColor = toHSL(value, 100, 50);
+        let endColor = toHSL(value, 0, 50);
+        saturationInput.style.background = "linear-gradient(to bottom," + startColor + "," + endColor + ")";
+        doublePointer.style.color = toHSL(value, saturation, lightness);
+
+
+        // for div#lightnessInput
+        // TODO: define for lightness
+      }
 
       pointer.onmousedown = function (event) {
 
@@ -147,22 +214,12 @@
 
           let theta = Math.atan2(mousePosX, mousePosY);
 
-          let posX = Math.sin(theta) * radius - 10;
-          let posY = Math.cos(theta) * radius + 10;
-          posY = -posY;
-          posX += radius;
-          posY += radius;
-
           let thetaInDegrees = theta * 180 / Math.PI;
           if (thetaInDegrees < 0) {
             thetaInDegrees += 360;
           }
-          hueValue.value = thetaInDegrees.toFixed(2);
 
-          pointer.style.color = "hsl(" + thetaInDegrees + ", 100%, 50%)";
-          pointer.style.left = posX + "px";
-          pointer.style.top = posY + "px";
-          pointer.style.transform = "translate(-50%, -50%) rotate(" + (theta + Math.PI / 2)  + "rad)"; 
+          setHue(thetaInDegrees);
         }
 
         hueInput.addEventListener("mousemove", onMouseMove);
@@ -181,6 +238,40 @@
           removeMouseMove();
           hueInput.onmouseleave = null;
         }
+      }
+
+      doublePointer.onmousedown = function (event) {
+
+        function onMouseMove(ev) {
+          let posY = ev.pageY - doublePointer.parentElement.offsetTop;
+
+          if (posY < 0)
+            posY = 0;
+          if (posY > doublePointer.parentElement.offsetHeight)
+            posY = doublePointer.parentElement.offsetHeight;
+
+          let saturationValue = document.querySelector("#saturationValue");
+          let value = posY / saturationInput.offsetHeight * 100
+          saturationValue.value = value;
+
+          doublePointer.style.color = "hsl(0," + (100 - value) + "%, 50%)";
+          doublePointer.style.top = posY + "px";
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+
+        function removeMouseMove() {
+          document.removeEventListener("mousemove", onMouseMove);
+        }
+
+        function onMouseUp(ev) {
+          removeMouseMove();
+
+          document.removeEventListener("mouseup", onMouseUp);
+        }
+
+        document.addEventListener("mouseup", onMouseUp);
+
       }
     </script>
   </body>
