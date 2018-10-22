@@ -12,6 +12,12 @@
         margin: 20px;
       }
 
+      #hslContainer {
+        border: 2px dashed brown;
+        float: left;
+        padding: 20px;
+      }
+
       .container {
         display: flex;
         flex-direction: column;
@@ -81,7 +87,14 @@
         margin: 0 20px;
         width: 30;
         height: 200px;
+      }
+
+      #saturationInput {
         background: linear-gradient(to bottom, hsl(0, 100%, 50%), hsl(0, 0%, 50%));
+      }
+
+      #lightnessInput {
+        background: linear-gradient(to bottom, hsl(0, 100%, 100%), hsl(0, 100%, 0%));
       }
 
       #double-pointer {
@@ -114,8 +127,17 @@
         transform:  rotate(180deg);
       }
 
-      #lightnessContainer>#double-pointer {
+      #lightnessInput>#double-pointer {
         top: 100px;
+      }
+
+      #colorBox {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+
+        background-color: hsl(0, 100%, 50%);
+        float: right;
       }
 
     </style>
@@ -137,7 +159,7 @@
         </div>
       </div>
 
-        <input id="saturationValue" class="value" value="0" type="text"/>
+        <input id="saturationValue" class="value" value="100" type="text"/>
     </div>
 
     <div id="lightnessContainer" class="container">
@@ -147,8 +169,10 @@
         </div>
       </div>
 
-        <input id="lightnessValue" class="value" value="0" type="text"/>
+        <input id="lightnessValue" class="value" value="50" type="text"/>
     </div>
+
+    <div id="colorBox"></div>
 
     <script>
       "use strict";
@@ -161,21 +185,47 @@
       let saturation = 100;
       let lightness = 50;
 
-      let pointer = document.querySelector("#pointer");
+      let pointer = document.querySelector("#hueInput>#pointer");
       let radius = pointer.parentElement.offsetWidth / 2;
 
       let hueInput = document.querySelector("#hueInput");
       let hueValue = document.querySelector("#hueValue");
 
-      let doublePointer = document.querySelector('#double-pointer');
+      let saturationDoublePointer = document.querySelector('#saturationInput>#double-pointer');
       let saturationInput = document.querySelector("#saturationInput");
+      let saturationValue = document.querySelector("#saturationValue");
+
+      let lightnessDoublePointer = document.querySelector('#lightnessInput>#double-pointer');
+      let lightnessInput = document.querySelector("#lightnessInput");
+      let lightnessValue = document.querySelector("#lightnessValue");
 
       function setHue(value) {
-        value = Number(value);
-        hue = value;
+        hue = Number(value);
 
+        hueValue.value = hue.toFixed(2);
+
+        refreshHue();
+      }
+
+      function setSaturation(value) {
+        saturation = Number(value);
+
+        saturationValue.value = saturation.toFixed(2);
+
+        refreshSaturation();
+      }
+
+      function setLightness(value) {
+        lightness = Number(value);
+
+        lightnessValue.value = lightness.toFixed(2);
+
+        refreshLightness();
+      }
+
+      function refreshHue() {
         // for div#hueInput
-        let theta = value * Math.PI / 180;
+        let theta = hue * Math.PI / 180;
 
         let posX = Math.sin(theta) * radius - 10;
         let posY = Math.cos(theta) * radius + 10;
@@ -183,23 +233,40 @@
         posX += radius;
         posY += radius;
 
-        hueValue.value = value.toFixed(2);
-
-        pointer.style.color = toHSL(value, 100, 50);
+        pointer.style.color = toHSL(hue, 100, 50);
         pointer.style.left = posX + "px";
         pointer.style.top = posY + "px";
         pointer.style.transform = "translate(-50%, -50%) rotate(" + (theta + Math.PI / 2)  + "rad)"; 
 
+        refreshSaturation();
+        refreshLightness();
+      }
 
-        // for div#saturationInput
-        let startColor = toHSL(value, 100, 50);
-        let endColor = toHSL(value, 0, 50);
+      function refreshSaturation() {
+        let startColor = toHSL(hue, 100, 50);
+        let endColor = toHSL(hue, 0, 50);
         saturationInput.style.background = "linear-gradient(to bottom," + startColor + "," + endColor + ")";
-        doublePointer.style.color = toHSL(value, saturation, lightness);
+        saturationDoublePointer.style.color = toHSL(hue, saturation, 50);
 
+        let posY = (100 - saturation) * saturationInput.offsetHeight / 100;
+        saturationDoublePointer.style.top = posY + "px";
 
-        // for div#lightnessInput
-        // TODO: define for lightness
+        refreshLightness();
+      }
+
+      function refreshLightness() {
+        let startColor = toHSL(hue, saturation, 100);
+        let middleColor = toHSL(hue, saturation, 50);
+        let endColor = toHSL(hue, saturation, 0);
+        lightnessInput.style.background = "linear-gradient(to bottom," + startColor + "," + middleColor + "," + endColor + ")";
+        lightnessDoublePointer.style.color = toHSL(hue, saturation, lightness);
+
+        let posY = (100 - lightness) * lightnessInput.offsetHeight / 100;
+        lightnessDoublePointer.style.top = posY + "px";
+
+        let finalColor = toHSL(hue, saturation, lightness);
+        let colorBox = document.querySelector("#colorBox");
+        colorBox.style.backgroundColor = finalColor;
       }
 
       pointer.onmousedown = function (event) {
@@ -240,23 +307,29 @@
         }
       }
 
-      doublePointer.onmousedown = function (event) {
+      function slider_onMouseDown(event) {
+        let targetPointer = event.currentTarget;
 
-        function onMouseMove(ev) {
-          let posY = ev.pageY - doublePointer.parentElement.offsetTop;
+        let onMouseMove = (
+          () => function (ev) {
+              let posY = ev.pageY - targetPointer.parentElement.offsetTop;
 
-          if (posY < 0)
-            posY = 0;
-          if (posY > doublePointer.parentElement.offsetHeight)
-            posY = doublePointer.parentElement.offsetHeight;
+              if (posY < 0)
+                posY = 0;
+              if (posY > targetPointer.parentElement.offsetHeight)
+                posY = targetPointer.parentElement.offsetHeight;
 
-          let saturationValue = document.querySelector("#saturationValue");
-          let value = posY / saturationInput.offsetHeight * 100
-          saturationValue.value = value;
-
-          doublePointer.style.color = "hsl(0," + (100 - value) + "%, 50%)";
-          doublePointer.style.top = posY + "px";
-        }
+              let sliderValue = posY / targetPointer.parentElement.offsetHeight * 100
+              
+              if (targetPointer === saturationDoublePointer)
+                setSaturation(100 - sliderValue);
+              else if (targetPointer === lightnessDoublePointer) {
+                setLightness(100 - sliderValue);
+              } else {
+                console.log("Error occured: This should not have happened");
+              }
+            }
+        )()
 
         document.addEventListener("mousemove", onMouseMove);
 
@@ -273,6 +346,10 @@
         document.addEventListener("mouseup", onMouseUp);
 
       }
+
+      saturationDoublePointer.onmousedown = slider_onMouseDown;
+      lightnessDoublePointer.onmousedown = slider_onMouseDown;
+
     </script>
   </body>
 </html>
