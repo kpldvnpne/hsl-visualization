@@ -10,12 +10,9 @@
 
       body {
         margin: 20px;
-      }
-
-      #hslContainer {
-        border: 2px dashed brown;
-        float: left;
-        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
       }
 
       .container {
@@ -44,7 +41,15 @@
        bottom: -10px;
        border-radius: 50%;
        content: '';
-       background: conic-gradient(hsl(0, 100%, 50%), hsl(120, 100%, 50%), hsl(240, 100%, 50%), hsl(360, 100%, 50%)), red;
+       background: conic-gradient(
+        hsl(0, 100%, 50%), 
+        hsl(60, 100%, 50%), 
+        hsl(120, 100%, 50%), 
+        hsl(180, 100%, 50%), 
+        hsl(240, 100%, 50%), 
+        hsl(300, 100%, 50%), 
+        hsl(360, 100%, 50%)
+      ), red;
        z-index: -1;
       }
 
@@ -144,35 +149,40 @@
   </head>
 
   <body>
-    <div id="hueContainer" class="container">
-      <div id="hueInput">
-        <div id="pointer">➤</div>
-      </div>
-
-      <input id="hueValue" class="value" value="0" onchange="setHue(this.value)" type="text"/>
-    </div>
-
-    <div id="saturationContainer" class="container">
-      <div id="saturationInput" class="verticalInput">
-        <div id="double-pointer">
-          <div id="left-pointer">➤</div><div id="right-pointer">➤</div>
+    <div id="hslContainer">
+      <div id="hueContainer" class="container">
+        <div id="hueInput">
+          <div id="pointer">➤</div>
         </div>
+
+        <input id="hueValue" class="value" value="0" onchange="setHue(this.value)" type="text"/>
       </div>
 
-        <input id="saturationValue" class="value" value="100" type="text"/>
-    </div>
-
-    <div id="lightnessContainer" class="container">
-      <div id="lightnessInput" class="verticalInput">
-        <div id="double-pointer">
-          <div id="left-pointer">➤</div><div id="right-pointer">➤</div>
+      <div id="saturationContainer" class="container">
+        <div id="saturationInput" class="verticalInput">
+          <div id="double-pointer">
+            <div id="left-pointer">➤</div><div id="right-pointer">➤</div>
+          </div>
         </div>
+
+          <input id="saturationValue" class="value" value="100" onchange="setSaturation(this.value)" type="text"/>
       </div>
 
-        <input id="lightnessValue" class="value" value="50" type="text"/>
+      <div id="lightnessContainer" class="container">
+        <div id="lightnessInput" class="verticalInput">
+          <div id="double-pointer">
+            <div id="left-pointer">➤</div><div id="right-pointer">➤</div>
+          </div>
+        </div>
+
+          <input id="lightnessValue" class="value" value="50" onchange="setLightness(this.value)" type="text"/>
+      </div>
     </div>
 
-    <div id="colorBox"></div>
+    <div id="palette">
+      <div id="colorBox"></div>
+      <p style="text-align: center; font-family: 'Century Gothic'; line-height: 50px">Color Palette</p>
+    </div>
 
     <script>
       "use strict";
